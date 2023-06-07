@@ -1,21 +1,31 @@
 class GameObject():
-    def __init__():
-        pass
-    def Draw(self):
-        pass
-    def OnTick(self):
-        pass
+    def __init__(x: int, y: int):
+        self.x = x
+        self.y = y
 
-class Alien(GameObject):
-    def __init__(x_start: int, y_start: int):
-        super().__init__()
-        self.x = x_start
-        self.y = y_start
-        self.direction = 1
-        pass
+    def CheckCollision(other: GameObject):
+        if self.x == other.x and self.y == other.y:
+            collision = True
+        else:
+            collision = False
+        return collision
 
     def Draw(self):
         led.plot(self.x, self.y)
+
+    def OnTick(self):
+        pass
+    def OnCollision(self, other: GameObject):
+        pass
+
+# Global list of GameObject
+game_objects: List[GameObject] = []
+
+class Alien(GameObject):
+    def __init__(x: int, y: int):
+        super().__init__(x, y)
+        self.direction = 1
+        pass
 
     def OnTick(self):
         self.x += self.direction
@@ -31,12 +41,7 @@ class Player(GameObject):
     right_waiting = False
     fire_waiting = False
     def __init__():
-        super().__init__()
-        self.x = 2
-        self.y = 4
-
-    def Draw(self):
-        led.plot(self.x, self.y)
+        super().__init__(2, 4)
 
     def OnTick(self):
         if Player.left_waiting == True:
@@ -47,29 +52,47 @@ class Player(GameObject):
             self.Fire()
         
     def MoveLeft(self):
-        pass
+        Player.left_waiting = False
+        if self.x > 0:
+            self.x -= 1
     
     def MoveRight(self):
-        pass
+        Player.right_waiting = False
+        if self.x < 5:
+            self.x += 1
 
     def Fire(self):
-        pass
+        Player.fire_waiting = False
+        global game_objects
+        game_objects.append(Projectile(self.x, self.y - 1))
+
+class Projectile(GameObject):
+    def OnTick(self):
+        global game_objects
+        self.y -= 1
+        if self.y < 0:
+            game_objects.remove(self)
+    
+    def OnCollision(self, other: GameObject):
+        global game_objects
+        game_objects.remove(self)
+        game_objects.remove(other)
 
 # Bind Inputs
 def on_button_pressed_a():
-    Player.leftwai
+    Player.left_waiting = True
 input.on_button_pressed(Button.A, on_button_pressed_a)
 
 def on_button_pressed_b():
-    pass
+    Player.right_waiting = True
 input.on_button_pressed(Button.B, on_button_pressed_b)
 
 def on_button_pressed_ab():
-    pass
+    Player.fire_waiting = True
 input.on_button_pressed(Button.AB, on_button_pressed_ab)
 
 # Initialise Game Objects
-game_objects: List[GameObject] = []
+game_objects.append(Player())
 game_objects.append(Alien(0, 0))
 
 # Run Game
@@ -82,6 +105,9 @@ while True:
     # Tick
     for obj_t in game_objects:
         obj_t.OnTick()
+
+    # Detect Collisions
+
 
     # Tick Delay
     pause(600)
