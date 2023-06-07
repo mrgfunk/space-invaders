@@ -6,8 +6,12 @@ class GameObject {
         this.y = y
     }
     
-    public static CheckCollision(other: GameObject): boolean {
+    public CheckCollision(other: GameObject): boolean {
         let collision: boolean;
+        if (other == this) {
+            return false
+        }
+        
         if (this.x == other.x && this.y == other.y) {
             collision = true
         } else {
@@ -45,14 +49,22 @@ class Alien extends GameObject {
         this.x += this.direction
         if (this.x > 4) {
             this.x = 4
+            this.y += 1
             this.direction = -1
         }
         
         if (this.x < 0) {
             this.x = 0
+            this.y += 1
             this.direction = 1
         }
         
+    }
+    
+    public OnCollision(other: GameObject) {
+        
+        game_objects.removeElement(this)
+        game_objects.removeElement(other)
     }
     
 }
@@ -135,7 +147,7 @@ class Player extends GameObject {
     public Fire() {
         Player.fire_waiting = false
         
-        game_objects.push(new Projectile(this.x, this.y - 1))
+        game_objects.push(new Projectile(this.x, this.y))
     }
     
 }
@@ -150,12 +162,6 @@ class Projectile extends GameObject {
             game_objects.removeElement(this)
         }
         
-    }
-    
-    public OnCollision(other: GameObject) {
-        
-        game_objects.removeElement(this)
-        game_objects.removeElement(other)
     }
     
 }
@@ -174,7 +180,8 @@ input.onButtonPressed(Button.AB, function on_button_pressed_ab() {
 game_objects.push(new Player())
 game_objects.push(new Alien(0, 0))
 //  Run Game
-while (true) {
+let game_over = false
+while (game_over == false) {
     //  Draw
     basic.clearScreen()
     for (let obj_d of game_objects) {
@@ -185,6 +192,30 @@ while (true) {
         obj_t.OnTick()
     }
     //  Detect Collisions
+    for (let obj_c1 of game_objects) {
+        for (let obj_c2 of game_objects) {
+            if (obj_c1.CheckCollision(obj_c2)) {
+                obj_c1.OnCollision(obj_c2)
+            }
+            
+        }
+    }
     //  Tick Delay
     pause(600)
+    //  Check Win/Loss condition
+    if (game_objects.length == 1) {
+        //  Game won, only player remaining
+        basic.clearScreen()
+        basic.showIcon(IconNames.Happy)
+        game_over = true
+    } else if (game_objects.length == 0) {
+        //  Game lost, alien got the Player
+        basic.clearScreen()
+        basic.showIcon(IconNames.Sad)
+        game_over = true
+    } else {
+        //  game still in progress
+        game_over = false
+    }
+    
 }

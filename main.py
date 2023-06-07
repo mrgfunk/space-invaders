@@ -3,7 +3,9 @@ class GameObject():
         self.x = x
         self.y = y
 
-    def CheckCollision(other: GameObject):
+    def CheckCollision(self, other: GameObject):
+        if other == self:
+            return False
         if self.x == other.x and self.y == other.y:
             collision = True
         else:
@@ -31,10 +33,17 @@ class Alien(GameObject):
         self.x += self.direction
         if self.x > 4:
             self.x = 4
+            self.y += 1
             self.direction = -1
         if self.x < 0:
             self.x = 0
+            self.y += 1
             self.direction = 1
+
+    def OnCollision(self, other: GameObject):
+        global game_objects
+        game_objects.remove(self)
+        game_objects.remove(other)
 
 class Player(GameObject):
     left_waiting = False
@@ -64,7 +73,7 @@ class Player(GameObject):
     def Fire(self):
         Player.fire_waiting = False
         global game_objects
-        game_objects.append(Projectile(self.x, self.y - 1))
+        game_objects.append(Projectile(self.x, self.y))
 
 class Projectile(GameObject):
     def OnTick(self):
@@ -72,11 +81,6 @@ class Projectile(GameObject):
         self.y -= 1
         if self.y < 0:
             game_objects.remove(self)
-    
-    def OnCollision(self, other: GameObject):
-        global game_objects
-        game_objects.remove(self)
-        game_objects.remove(other)
 
 # Bind Inputs
 def on_button_pressed_a():
@@ -96,7 +100,8 @@ game_objects.append(Player())
 game_objects.append(Alien(0, 0))
 
 # Run Game
-while True:
+game_over = False
+while game_over == False:
     # Draw
     basic.clear_screen()
     for obj_d in game_objects:
@@ -107,7 +112,27 @@ while True:
         obj_t.OnTick()
 
     # Detect Collisions
-
+    for obj_c1 in game_objects:
+        for obj_c2 in game_objects:
+            if(obj_c1.CheckCollision(obj_c2)):
+                obj_c1.OnCollision(obj_c2)
 
     # Tick Delay
     pause(600)
+
+    # Check Win/Loss condition
+    if len(game_objects) == 1:
+        # Game won, only player remaining
+        basic.clear_screen()
+        basic.show_icon(IconNames.HAPPY)
+        game_over = True
+    elif len(game_objects) == 0:
+        # Game lost, alien got the Player
+        basic.clear_screen()
+        basic.show_icon(IconNames.SAD)
+        game_over = True
+    else:
+        # game still in progress
+        game_over = False
+
+    
